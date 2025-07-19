@@ -31,17 +31,20 @@ faixas = pd.cut(
 # Conta as ocorrências
 contagem_faixas = faixas.value_counts().sort_index()
 
-# Só cria o gráfico se houver dados
-if contagem_faixas.sum() > 0:
+# Converte o índice Categorical para string (evita erro no Plotly)
+df_pizza = pd.DataFrame({
+    "Faixa": contagem_faixas.index.astype(str),
+    "count": contagem_faixas.values
+})
+
+# Só cria o gráfico se houver dados válidos
+if not df_pizza.empty and df_pizza["count"].sum() > 0:
     fig_pizza = px.pie(
-        contagem_faixas.reset_index(name='count'),
-        names="index",
+        df_pizza,
+        names="Faixa",
         values="count",
         title="Distribuição por Faixa de Andamento"
     )
     st.plotly_chart(fig_pizza, use_container_width=True)
 else:
     st.info("Nenhuma tarefa disponível para gerar gráfico de pizza.")
-
-st.subheader("Tarefas em Andamento")
-st.dataframe(df_filtrado.sort_values("Andamento", ascending=False), use_container_width=True)
