@@ -21,19 +21,27 @@ df_resp = df_filtrado.groupby("Responsavel")["Andamento"].mean().reset_index()
 fig_resp = px.bar(df_resp, x="Responsavel", y="Andamento", title="Média de Andamento por Responsável", color="Responsavel", text_auto=True)
 st.plotly_chart(fig_resp, use_container_width=True)
 
-faixas = pd.cut(df_filtrado["Andamento"], bins=[-1, 0, 50, 80, 100], labels=["0%", "1-50%", "51-80%", "81-100%"])
+# Categorização por faixa de andamento
+faixas = pd.cut(
+    df_filtrado["Andamento"], 
+    bins=[-1, 0, 50, 80, 100], 
+    labels=["0%", "1-50%", "51-80%", "81-100%"]
+)
 
-if not faixas.empty and faixas.notna().any():
+# Conta as ocorrências
+contagem_faixas = faixas.value_counts().sort_index()
+
+# Só cria o gráfico se houver dados
+if contagem_faixas.sum() > 0:
     fig_pizza = px.pie(
-        faixas.value_counts().reset_index(),
+        contagem_faixas.reset_index(name='count'),
         names="index",
         values="count",
         title="Distribuição por Faixa de Andamento"
     )
     st.plotly_chart(fig_pizza, use_container_width=True)
 else:
-    st.warning("Nenhum dado disponível para gerar o gráfico de pizza.")
-
+    st.info("Nenhuma tarefa disponível para gerar gráfico de pizza.")
 
 st.subheader("Tarefas em Andamento")
 st.dataframe(df_filtrado.sort_values("Andamento", ascending=False), use_container_width=True)
