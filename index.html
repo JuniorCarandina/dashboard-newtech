@@ -650,7 +650,96 @@
                         projetos = dadosSync.projetos;
                     }
                     
-                    configAPI.ultimaSync = new Date().toISOString();
+        async function sincronizarComAPI() {
+    if (!configAPI.url || !configAPI.token) {
+        mostrarNotificacao('Configure a API antes de sincronizar', 'error');
+        return false;
+    }
+
+    mostrarNotificacao('Sincronizando...', 'pending');
+    
+    try {
+        // Enviar dados para a API
+        const response = await fetch(`${configAPI.url}/sync`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': configAPI.token
+            },
+            body: JSON.stringify({
+                projetos,
+                clientes,
+                funcionarios,
+                timestamp: new Date().toISOString()
+            })
+        });
+
+        if (response.ok) {
+            const dadosSync = await response.json();
+            
+            console.log('📡 Resposta da sincronização:', dadosSync);
+            
+            // NOVO: Atualizar dados locais com resposta da API
+            if (dadosSync.success) {
+                // Atualizar projetos se retornados
+                if (dadosSync.projetos && Array.isArray(dadosSync.projetos)) {
+                    projetos.length = 0; // Limpar array
+                    projetos.push(...dadosSync.projetos); // Adicionar dados atualizados
+                    console.log(`📊 ${dadosSync.projetos.length} projetos atualizados`);
+                }
+                
+                // Atualizar clientes se retornados
+                if (dadosSync.clientes && Array.isArray(dadosSync.clientes)) {
+                    clientes.length = 0;
+                    clientes.push(...dadosSync.clientes);
+                    console.log(`👥 ${dadosSync.clientes.length} clientes atualizados`);
+                }
+                
+                // Atualizar funcionários se retornados
+                if (dadosSync.funcionarios && Array.isArray(dadosSync.funcionarios)) {
+                    funcionarios.length = 0;
+                    funcionarios.push(...dadosSync.funcionarios);
+                    console.log(`⚡ ${dadosSync.funcionarios.length} funcionários atualizados`);
+                }
+                
+                // Salvar dados atualizados
+                configAPI.ultimaSync = new Date().toISOString();
+                salvarDados();
+                
+                // IMPORTANTE: Atualizar toda a interface
+                atualizarInterface();
+                
+                // Mostrar estatísticas da sincronização
+                let mensagemSync = 'Sincronização concluída';
+                if (dadosSync.stats) {
+                    mensagemSync += `\n📊 ${dadosSync.stats.projetosAtivos || 0} ativos`;
+                    mensagemSync += `\n✅ ${dadosSync.stats.projetosConcluidos || 0} concluídos`;
+                    mensagemSync += `\n⚠️ ${dadosSync.stats.projetosAtrasados || 0} atrasados`;
+                    if (dadosSync.stats.tarefasGeradas > 0) {
+                        mensagemSync += `\n📋 ${dadosSync.stats.tarefasGeradas} tarefas criadas no NewTech`;
+                    }
+                }
+                
+                mostrarNotificacao(mensagemSync, 'success');
+                document.getElementById('ultima-sync').textContent = new Date().toLocaleTimeString();
+                document.getElementById('status-conexao').innerHTML = '🟢 Online';
+                
+                return true;
+            } else {
+                throw new Error(dadosSync.message || 'Erro na sincronização');
+            }
+        } else {
+            throw new Error(`Erro ${response.status}: ${response.statusText}`);
+        }
+    } catch (error) {
+        mostrarNotificacao('Erro na sincronização: ' + error.message, 'error');
+        document.getElementById('status-conexao').innerHTML = '🔴 Offline';
+        console.error('❌ Erro na sincronização:', error);
+        return false;
+    }
+}
+
+            configAPI.ultimaSync = new Date().toISOString();
                     salvarDados();
                     atualizarInterface();
                     
