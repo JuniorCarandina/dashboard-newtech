@@ -1,98 +1,1728 @@
-
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>New Tech | Dashboard Gerencial</title>
-  <link rel="icon" href="logo.png" type="image/png">
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-    }
-    header {
-      background-color: #008fc6;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      color: white;
-    }
-    header img {
-      height: 60px;
-      margin-right: 20px;
-    }
-    h1 {
-      font-size: 1.5rem;
-    }
-    nav {
-      background-color: #eee;
-      display: flex;
-      justify-content: center;
-      padding: 10px;
-      gap: 20px;
-    }
-    nav button {
-      background-color: #008fc6;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      cursor: pointer;
-      font-size: 1rem;
-      border-radius: 5px;
-    }
-    nav button:hover {
-      background-color: #0073a6;
-    }
-    iframe {
-      width: 100%;
-      height: calc(100vh - 160px);
-      border: none;
-    }
-    footer {
-      background-color: #58595b;
-      color: white;
-      text-align: center;
-      padding: 10px;
-      font-size: 0.9rem;
-    }
-    @media screen and (max-width: 1024px) {
-      iframe {
-        display: none;
-      }
-      body::before {
-        content: "Por favor, acesse este painel em um computador.";
-        display: block;
-        text-align: center;
-        font-size: 1.2rem;
-        margin-top: 100px;
-        color: #333;
-      }
-    }
-  </style>
-  <script>
-    function carregarPainel(url) {
-      document.getElementById("painel-frame").src = url;
-    }
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard New Tech - Cloud Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal.ativo { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 12px; padding: 20px; max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; }
+        .etapa-concluida { background: #10b981; color: white; }
+        .etapa-atual { background: #f59e0b; color: white; }
+        .etapa-pendente { background: #e5e7eb; color: #6b7280; }
+        .processo-timeline { position: relative; }
+        .processo-timeline::before { content: ''; position: absolute; left: 17px; top: 0; bottom: 0; width: 2px; background: #e5e7eb; }
+        .etapa-item { position: relative; padding-left: 50px; margin-bottom: 15px; }
+        .etapa-numero { position: absolute; left: 0; top: 0; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-button { padding: 8px 16px; margin-right: 4px; border-radius: 6px; cursor: pointer; }
+        .tab-button.active { background: #3b82f6; color: white; }
+        .tab-button:not(.active) { background: #e5e7eb; color: #6b7280; }
+        .tab-button:not(.active):hover { background: #d1d5db; }
+        .sync-indicator { position: fixed; top: 20px; right: 20px; padding: 8px 16px; border-radius: 6px; font-size: 12px; z-index: 1001; }
+        .sync-success { background: #10b981; color: white; }
+        .sync-error { background: #ef4444; color: white; }
+        .sync-pending { background: #f59e0b; color: white; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        .fade-out { animation: fadeOut 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    </style>
 </head>
-<body>
-  <header>
-    <img src="logo.png" alt="New Tech">
-    <h1>Dashboard Gerencial | New Tech Engenharia e Automação</h1>
-  </header>
+<body class="min-h-screen bg-gray-50">
+    <!-- Indicador de Sincronização -->
+    <div id="sync-indicator" class="sync-indicator" style="display: none;"></div>
+    
+    <div class="max-w-[98vw] mx-auto p-4">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Dashboard New Tech - Cloud Edition</h1>
+                    <p class="text-gray-600">Sistema integrado de controle de produção com sincronização automática</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-sm text-gray-500">
+                        <div>Última sync: <span id="ultima-sync">--:--</span></div>
+                        <div>Status: <span id="status-conexao" class="font-medium">🟢 Online</span></div>
+                    </div>
+                    <button onclick="sincronizarManual()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                        🔄 Sincronizar
+                    </button>
+                </div>
+            </div>
+        </div>
 
-  <nav>
-    <button onclick="carregarPainel('https://dashboard-projetos-ntxpyqc75nyd4zjiwjyjy.streamlit.app/')">Projetos</button>
-    <button onclick="carregarPainel('https://juniorcarandina-timesheet.streamlit.app/')">Horas Técnicas</button>
-    <button onclick="window.open('https://docs.google.com/spreadsheets/d/1QYB7SC74LhgakY__6LdgS-NChJeXqNxPimhDHFd0bOk/edit', '_blank')">Planilha de Dados</button>
-  </nav>
+        <!-- Configuração da API -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6" id="config-api" style="display: none;">
+            <h3 class="font-semibold text-yellow-800 mb-2">⚙️ Configuração da API NewTech v25</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-yellow-700 mb-1">URL da API</label>
+                    <input type="text" id="api-url" placeholder="https://api.newtech.com/v25" 
+                        class="w-full border border-yellow-300 rounded px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-yellow-700 mb-1">Token de Acesso</label>
+                    <input type="password" id="api-token" placeholder="Bearer token..." 
+                        class="w-full border border-yellow-300 rounded px-3 py-2 text-sm">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="salvarConfigAPI()" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 text-sm">
+                        💾 Salvar Config
+                    </button>
+                </div>
+            </div>
+        </div>
 
-  <iframe id="painel-frame" src="https://dashboard-projetos-ntxpyqc75nyd4zjiwjyjy.streamlit.app/" allowfullscreen></iframe>
+        <!-- Estatísticas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total de Projetos</p>
+                        <p class="text-2xl font-bold text-gray-900" id="total-projetos">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">📊</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Concluídos</p>
+                        <p class="text-2xl font-bold text-green-600" id="projetos-concluidos">0</p>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">✅</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Em Andamento</p>
+                        <p class="text-2xl font-bold text-yellow-600" id="projetos-andamento">0</p>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full">⏳</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Etapa Média</p>
+                        <p class="text-2xl font-bold text-blue-600" id="etapa-media">0.0</p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">📈</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Prazo Médio</p>
+                        <p class="text-2xl font-bold text-purple-600" id="prazo-medio">0 dias</p>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-full">📅</div>
+                </div>
+            </div>
+        </div>
 
-  <footer>
-    &copy; 2025 New Tech Engenharia e Automação. Todos os direitos reservados.
-  </footer>
+        <!-- Controles -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div class="flex flex-wrap gap-3 items-center justify-between">
+                <div class="flex flex-wrap items-center gap-3">
+                    <select id="filtro-etapa" onchange="renderizarTabela()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="todas">Todas as Etapas</option>
+                    </select>
+                    <select id="filtro-status" onchange="renderizarTabela()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="todos">Todos os Status</option>
+                        <option value="Em andamento">Em andamento</option>
+                        <option value="Concluído">Concluído</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="Atrasado">Atrasado</option>
+                    </select>
+                    <select id="filtro-cliente" onchange="renderizarTabela()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        <option value="todos">Todos os Clientes</option>
+                    </select>
+                    <input type="text" id="busca-projeto" placeholder="Buscar projeto..." onkeyup="renderizarTabela()" 
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="mostrarConfigAPI()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm">
+                        ⚙️ API Config
+                    </button>
+                    <button onclick="mostrarRelatorios()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm">
+                        📊 Relatórios
+                    </button>
+                    <button onclick="mostrarGerenciamento()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                        ⚙️ Gerenciar
+                    </button>
+                    <button onclick="mostrarProcesso()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                        🔄 Ver Processo
+                    </button>
+                    <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 text-sm">
+                        📥 Excel
+                    </button>
+                    <button onclick="backupDados()" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm">
+                        💾 Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Projetos -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="px-4 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">Projetos em Andamento (<span id="total-filtrados">0</span>)</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Projeto</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Etapa Atual</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Progresso</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsável</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prazo</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Laudo</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-projetos" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modais (mesma estrutura do original, mas com melhorias) -->
+        <!-- Modal do Processo -->
+        <div id="modal-processo" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Fluxograma New Tech</h2>
+                    <button onclick="fecharModal('modal-processo')" class="text-gray-500 hover:text-gray-700 text-xl">❌</button>
+                </div>
+                <div class="processo-timeline" id="processo-timeline">
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Relatórios -->
+        <div id="modal-relatorios" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Relatórios e Análises</h2>
+                    <button onclick="fecharModal('modal-relatorios')" class="text-gray-500 hover:text-gray-700 text-xl">❌</button>
+                </div>
+
+                <!-- Métricas de Performance -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-blue-800 mb-2">📈 Produtividade</h3>
+                        <p class="text-2xl font-bold text-blue-600" id="rel-produtividade">0%</p>
+                        <p class="text-sm text-blue-600">Projetos finalizados</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-green-800 mb-2">⏱️ Tempo Médio</h3>
+                        <p class="text-2xl font-bold text-green-600" id="rel-tempo-medio">0 dias</p>
+                        <p class="text-sm text-green-600">Por etapa</p>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-yellow-800 mb-2">🎯 Eficiência</h3>
+                        <p class="text-2xl font-bold text-yellow-600" id="rel-eficiencia">0%</p>
+                        <p class="text-sm text-yellow-600">Cumprimento de prazos</p>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-red-800 mb-2">⚠️ Alertas</h3>
+                        <p class="text-2xl font-bold text-red-600" id="rel-alertas">0</p>
+                        <p class="text-sm text-red-600">Projetos em atraso</p>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white border rounded-lg p-4">
+                        <h3 class="font-semibold mb-4">📊 Projetos por Status</h3>
+                        <canvas id="grafico-status" width="300" height="200"></canvas>
+                    </div>
+                    <div class="bg-white border rounded-lg p-4">
+                        <h3 class="font-semibold mb-4">📈 Projetos por Etapa</h3>
+                        <canvas id="grafico-etapas" width="300" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Outros modais mantidos da versão original -->
+        <div id="modal-gerenciamento" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Gerenciamento do Sistema</h2>
+                    <button onclick="fecharModal('modal-gerenciamento')" class="text-gray-500 hover:text-gray-700 text-xl">❌</button>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-200 mb-4">
+                    <button class="tab-button active" onclick="trocarTab('projetos')">Projetos</button>
+                    <button class="tab-button" onclick="trocarTab('clientes')">Clientes</button>
+                    <button class="tab-button" onclick="trocarTab('funcionarios')">Funcionários</button>
+                    <button class="tab-button" onclick="trocarTab('etapas')">Etapas</button>
+                    <button class="tab-button" onclick="trocarTab('importar')">Importar</button>
+                    <button class="tab-button" onclick="trocarTab('backup')">Backup</button>
+                </div>
+
+                <!-- Tab Projetos -->
+                <div id="tab-projetos" class="tab-content active">
+                    <div class="mb-4">
+                        <button onclick="mostrarFormProjeto()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                            ➕ Novo Projeto
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">Nome</th>
+                                    <th class="px-3 py-2 text-left">Cliente</th>
+                                    <th class="px-3 py-2 text-left">Status</th>
+                                    <th class="px-3 py-2 text-left">Prazo</th>
+                                    <th class="px-3 py-2 text-left">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-projetos">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Backup -->
+                <div id="tab-backup" class="tab-content">
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-blue-800 mb-2">💾 Backup Automático</h3>
+                            <p class="text-sm text-blue-600 mb-4">Os dados são salvos automaticamente no navegador e sincronizados com a API.</p>
+                            <div class="flex gap-2">
+                                <button onclick="backupDados()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm">
+                                    📥 Fazer Backup Manual
+                                </button>
+                                <button onclick="restaurarBackup()" class="bg-green-600 text-white px-4 py-2 rounded text-sm">
+                                    📤 Restaurar Backup
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-yellow-800 mb-2">🔄 Sincronização</h3>
+                            <p class="text-sm text-yellow-600 mb-4">Configure a sincronização automática com o sistema NewTech v25.</p>
+                            <div class="flex gap-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="sync-auto" onchange="configurarSyncAuto()" class="mr-2">
+                                    <span class="text-sm">Sincronização automática (a cada 5 min)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-800 mb-2">📊 Estatísticas de Armazenamento</h3>
+                            <div id="storage-stats" class="text-sm text-gray-600">
+                                <p>Projetos: <span id="stat-projetos">0</span></p>
+                                <p>Clientes: <span id="stat-clientes">0</span></p>
+                                <p>Funcionários: <span id="stat-funcionarios">0</span></p>
+                                <p>Última sincronização: <span id="stat-ultima-sync">Nunca</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outras tabs mantidas da versão original -->
+                <div id="tab-clientes" class="tab-content">
+                    <div class="mb-4">
+                        <button onclick="mostrarFormCliente()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                            ➕ Novo Cliente
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">Nome</th>
+                                    <th class="px-3 py-2 text-left">Projetos</th>
+                                    <th class="px-3 py-2 text-left">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-clientes">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-funcionarios" class="tab-content">
+                    <div class="mb-4">
+                        <button onclick="mostrarFormFuncionario()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                            ➕ Novo Funcionário
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">Nome</th>
+                                    <th class="px-3 py-2 text-left">Projetos Ativos</th>
+                                    <th class="px-3 py-2 text-left">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-funcionarios">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-etapas" class="tab-content">
+                    <div class="mb-4">
+                        <button onclick="mostrarFormEtapa()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                            ➕ Nova Etapa
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">Ordem</th>
+                                    <th class="px-3 py-2 text-left">Nome</th>
+                                    <th class="px-3 py-2 text-left">Categoria</th>
+                                    <th class="px-3 py-2 text-left">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-etapas">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tab-importar" class="tab-content">
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold mb-4">Importar Backup</h3>
+                            <input type="file" id="arquivo-backup" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <p class="text-sm text-gray-500 mt-2">Restaurar backup completo do sistema</p>
+                            <button onclick="importarBackup()" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                                📥 Restaurar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Formulário -->
+        <div id="modal-formulario" class="modal">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-900" id="titulo-formulario">Novo Item</h2>
+                    <button onclick="fecharModal('modal-formulario')" class="text-gray-500 hover:text-gray-700 text-xl">❌</button>
+                </div>
+                <div id="conteudo-formulario">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURAÇÃO E DADOS GLOBAIS ====================
+        
+        // Configuração da API
+        let configAPI = {
+            url: '',
+            token: '',
+            syncAuto: false,
+            ultimaSync: null
+        };
+
+        // Dados globais com estrutura melhorada
+        let etapasProcesso = [
+            { id: 1, nome: "Pedido Fechado", categoria: "inicial" },
+            { id: 2, nome: "Projeto Mecânico e Elétrico", categoria: "projeto" },
+            { id: 3, nome: "Aprovação do Cliente", categoria: "aprovacao" },
+            { id: 4, nome: "Elaborar Lista de Materiais", categoria: "planejamento" },
+            { id: 5, nome: "Orçar Materiais", categoria: "planejamento" },
+            { id: 6, nome: "Aguardar Entrega dos Materiais", categoria: "suprimentos" },
+            { id: 7, nome: "Montagem da Máquina/Equipamento", categoria: "producao" },
+            { id: 8, nome: "Montagem do Quadro Elétrico", categoria: "producao" },
+            { id: 9, nome: "Teste Elétrico", categoria: "teste" },
+            { id: 10, nome: "Teste Mecânico", categoria: "teste" },
+            { id: 11, nome: "Pintura/Zincagem (se aplicar)", categoria: "acabamento" },
+            { id: 12, nome: "Montagem Final", categoria: "producao" },
+            { id: 13, nome: "Teste Final", categoria: "teste" },
+            { id: 14, nome: "Embalagem", categoria: "expedicao" },
+            { id: 15, nome: "Envio de Documentação", categoria: "documentacao" },
+            { id: 16, nome: "Envio de Laudo (quando aplicável)", categoria: "documentacao" },
+            { id: 17, nome: "Expedição", categoria: "expedicao" },
+            { id: 18, nome: "Faturamento", categoria: "finalizacao" }
+        ];
+
+        let projetos = [
+            { 
+                id: 1, 
+                nome: "FC75", 
+                cliente: "Cliente A", 
+                etapaAtual: 3, 
+                status: "Em andamento", 
+                responsavel: "RODOLFO, ULISSES", 
+                temLaudo: true,
+                prazoFinal: "2025-08-15",
+                dataCriacao: "2025-07-01",
+                observacoes: ""
+            },
+            { 
+                id: 2, 
+                nome: "PROJ_23", 
+                cliente: "Cliente B", 
+                etapaAtual: 8, 
+                status: "Em andamento", 
+                responsavel: "FABIANO, ALEXANDRE", 
+                temLaudo: false,
+                prazoFinal: "2025-08-30",
+                dataCriacao: "2025-07-05",
+                observacoes: ""
+            },
+            { 
+                id: 3, 
+                nome: "PROJ_22", 
+                cliente: "Cliente C", 
+                etapaAtual: 12, 
+                status: "Em andamento", 
+                responsavel: "SIDMAR, FÁBIO", 
+                temLaudo: true,
+                prazoFinal: "2025-08-10",
+                dataCriacao: "2025-06-20",
+                observacoes: ""
+            },
+            { 
+                id: 4, 
+                nome: "PROJ_21", 
+                cliente: "Cliente D", 
+                etapaAtual: 18, 
+                status: "Concluído", 
+                responsavel: "EDUARDO, VINICIUS", 
+                temLaudo: false,
+                prazoFinal: "2025-07-25",
+                dataCriacao: "2025-06-01",
+                observacoes: "Concluído dentro do prazo"
+            },
+            { 
+                id: 5, 
+                nome: "PROJ_20", 
+                cliente: "Cliente E", 
+                etapaAtual: 2, 
+                status: "Em andamento", 
+                responsavel: "ALEXANDRE, CLEITON", 
+                temLaudo: true,
+                prazoFinal: "2025-09-15",
+                dataCriacao: "2025-07-10",
+                observacoes: ""
+            },
+            { 
+                id: 6, 
+                nome: "PROJ_19", 
+                cliente: "Cliente F", 
+                etapaAtual: 11, 
+                status: "Em andamento", 
+                responsavel: "RODOLFO, SIDMAR", 
+                temLaudo: false,
+                prazoFinal: "2025-08-05",
+                dataCriacao: "2025-06-15",
+                observacoes: "Atraso na entrega de materiais"
+            }
+        ];
+
+        let clientes = [
+            { id: 1, nome: "Cliente A", contato: "contato@clientea.com" },
+            { id: 2, nome: "Cliente B", contato: "contato@clienteb.com" },
+            { id: 3, nome: "Cliente C", contato: "contato@clientec.com" },
+            { id: 4, nome: "Cliente D", contato: "contato@cliented.com" },
+            { id: 5, nome: "Cliente E", contato: "contato@clientee.com" },
+            { id: 6, nome: "Cliente F", contato: "contato@clientef.com" }
+        ];
+
+        let funcionarios = [
+            { id: 1, nome: "RODOLFO" },
+            { id: 2, nome: "ULISSES" },
+            { id: 3, nome: "FABIANO" },
+            { id: 4, nome: "ALEXANDRE" },
+            { id: 5, nome: "SIDMAR" },
+            { id: 6, nome: "FÁBIO" },
+            { id: 7, nome: "EDUARDO" },
+            { id: 8, nome: "VINICIUS" },
+            { id: 9, nome: "CLEITON" }
+        ];
+
+        let proximoId = {
+            projeto: 7,
+            cliente: 7,
+            funcionario: 10,
+            etapa: 19
+        };
+
+        let intervalosSync = [];
+
+        // ==================== PERSISTÊNCIA E SINCRONIZAÇÃO ====================
+
+        function salvarDados() {
+            const dados = {
+                projetos,
+                clientes,
+                funcionarios,
+                etapasProcesso,
+                proximoId,
+                configAPI,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const dadosString = JSON.stringify(dados);
+                window.localStorage.setItem('newtech_dashboard', dadosString);
+                mostrarNotificacao('Dados salvos localmente', 'success');
+                return true;
+            } catch (error) {
+                mostrarNotificacao('Erro ao salvar dados: ' + error.message, 'error');
+                return false;
+            }
+        }
+
+        function carregarDados() {
+            try {
+                const dadosString = window.localStorage.getItem('newtech_dashboard');
+                if (dadosString) {
+                    const dados = JSON.parse(dadosString);
+                    
+                    if (dados.projetos) projetos = dados.projetos;
+                    if (dados.clientes) clientes = dados.clientes;
+                    if (dados.funcionarios) funcionarios = dados.funcionarios;
+                    if (dados.etapasProcesso) etapasProcesso = dados.etapasProcesso;
+                    if (dados.proximoId) proximoId = dados.proximoId;
+                    if (dados.configAPI) {
+                        configAPI = { ...configAPI, ...dados.configAPI };
+                        carregarConfigAPI();
+                    }
+                    
+                    mostrarNotificacao('Dados carregados do armazenamento local', 'success');
+                    return true;
+                }
+            } catch (error) {
+                mostrarNotificacao('Erro ao carregar dados: ' + error.message, 'error');
+            }
+            return false;
+        }
+
+        // ==================== API E SINCRONIZAÇÃO ====================
+
+        async function sincronizarComAPI() {
+            if (!configAPI.url || !configAPI.token) {
+                mostrarNotificacao('Configure a API antes de sincronizar', 'error');
+                return false;
+            }
+
+            mostrarNotificacao('Sincronizando...', 'pending');
+            
+            try {
+                // Enviar dados para a API
+                const response = await fetch(`${configAPI.url}/sync`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': configAPI.token
+                    },
+                    body: JSON.stringify({
+                        projetos,
+                        clientes,
+                        funcionarios,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (response.ok) {
+                    const dadosSync = await response.json();
+                    
+                    // Atualizar dados locais com resposta da API
+                    if (dadosSync.projetos) {
+                        projetos = dadosSync.projetos;
+                    }
+                    
+                    configAPI.ultimaSync = new Date().toISOString();
+                    salvarDados();
+                    atualizarInterface();
+                    
+                    mostrarNotificacao('Sincronização concluída', 'success');
+                    document.getElementById('ultima-sync').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('status-conexao').innerHTML = '🟢 Online';
+                    
+                    return true;
+                } else {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                mostrarNotificacao('Erro na sincronização: ' + error.message, 'error');
+                document.getElementById('status-conexao').innerHTML = '🔴 Offline';
+                return false;
+            }
+        }
+
+        function configurarSyncAuto() {
+            const checkbox = document.getElementById('sync-auto');
+            configAPI.syncAuto = checkbox.checked;
+            
+            // Limpar intervalos existentes
+            intervalosSync.forEach(intervalo => clearInterval(intervalo));
+            intervalosSync = [];
+            
+            if (configAPI.syncAuto) {
+                // Configurar sync automático a cada 5 minutos
+                const intervalo = setInterval(() => {
+                    sincronizarComAPI();
+                }, 5 * 60 * 1000);
+                intervalosSync.push(intervalo);
+                
+                mostrarNotificacao('Sincronização automática ativada', 'success');
+            } else {
+                mostrarNotificação('Sincronização automática desativada', 'success');
+            }
+            
+            salvarDados();
+        }
+
+        function sincronizarManual() {
+            sincronizarComAPI();
+        }
+
+        // ==================== INTERFACE E NOTIFICAÇÕES ====================
+
+        function mostrarNotificacao(mensagem, tipo = 'success') {
+            const indicator = document.getElementById('sync-indicator');
+            indicator.textContent = mensagem;
+            indicator.className = `sync-indicator sync-${tipo} fade-in`;
+            indicator.style.display = 'block';
+            
+            setTimeout(() => {
+                indicator.className = `sync-indicator sync-${tipo} fade-out`;
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 300);
+            }, 3000);
+        }
+
+        function mostrarConfigAPI() {
+            document.getElementById('config-api').style.display = 'block';
+        }
+
+        function salvarConfigAPI() {
+            configAPI.url = document.getElementById('api-url').value;
+            configAPI.token = document.getElementById('api-token').value;
+            
+            salvarDados();
+            mostrarNotificacao('Configuração da API salva', 'success');
+            document.getElementById('config-api').style.display = 'none';
+        }
+
+        function carregarConfigAPI() {
+            document.getElementById('api-url').value = configAPI.url || '';
+            document.getElementById('api-token').value = configAPI.token || '';
+            document.getElementById('sync-auto').checked = configAPI.syncAuto || false;
+        }
+
+        // ==================== FUNÇÕES UTILITÁRIAS MELHORADAS ====================
+
+        function obterCorEtapa(etapa) {
+            const etapaInfo = etapasProcesso.find(e => e.id === etapa);
+            if (!etapaInfo) return 'bg-gray-100 text-gray-800';
+            
+            switch (etapaInfo.categoria) {
+                case 'inicial': return 'bg-blue-100 text-blue-800';
+                case 'projeto': return 'bg-purple-100 text-purple-800';
+                case 'aprovacao': return 'bg-yellow-100 text-yellow-800';
+                case 'planejamento': return 'bg-cyan-100 text-cyan-800';
+                case 'suprimentos': return 'bg-orange-100 text-orange-800';
+                case 'producao': return 'bg-green-100 text-green-800';
+                case 'teste': return 'bg-red-100 text-red-800';
+                case 'acabamento': return 'bg-pink-100 text-pink-800';
+                case 'documentacao': return 'bg-indigo-100 text-indigo-800';
+                case 'expedicao': return 'bg-teal-100 text-teal-800';
+                case 'finalizacao': return 'bg-emerald-100 text-emerald-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function obterCorStatus(status) {
+            switch (status) {
+                case 'Concluído': return 'bg-green-100 text-green-800';
+                case 'Em andamento': return 'bg-yellow-100 text-yellow-800';
+                case 'Pendente': return 'bg-red-100 text-red-800';
+                case 'Atrasado': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        function calcularProgresso(etapa) {
+            return Math.round((etapa / etapasProcesso.length) * 100);
+        }
+
+        function calcularStatusPrazo(prazoFinal) {
+            if (!prazoFinal) return '';
+            
+            const hoje = new Date();
+            const prazo = new Date(prazoFinal);
+            const diffTime = prazo - hoje;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) return 'Atrasado';
+            if (diffDays <= 3) return 'Urgente';
+            if (diffDays <= 7) return 'Próximo';
+            return 'Normal';
+        }
+
+        function formatarPrazo(prazoFinal) {
+            if (!prazoFinal) return 'Não definido';
+            
+            const prazo = new Date(prazoFinal);
+            const hoje = new Date();
+            const diffTime = prazo - hoje;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const dataFormatada = prazo.toLocaleDateString('pt-BR');
+            
+            if (diffDays < 0) {
+                return `${dataFormatada} (${Math.abs(diffDays)} dias atraso)`;
+            } else if (diffDays === 0) {
+                return `${dataFormatada} (Hoje!)`;
+            } else {
+                return `${dataFormatada} (${diffDays} dias)`;
+            }
+        }
+
+        // ==================== ESTATÍSTICAS MELHORADAS ====================
+
+        function atualizarEstatisticas() {
+            const total = projetos.length;
+            const concluidos = projetos.filter(p => p.status === 'Concluído').length;
+            const andamento = projetos.filter(p => p.status === 'Em andamento').length;
+            const etapaMedia = total > 0 ? projetos.reduce((acc, p) => acc + p.etapaAtual, 0) / total : 0;
+            
+            // Calcular prazo médio restante
+            const projetosComPrazo = projetos.filter(p => p.prazoFinal && p.status !== 'Concluído');
+            let prazoMedio = 0;
+            
+            if (projetosComPrazo.length > 0) {
+                const hoje = new Date();
+                const totalDias = projetosComPrazo.reduce((acc, p) => {
+                    const prazo = new Date(p.prazoFinal);
+                    const diff = Math.ceil((prazo - hoje) / (1000 * 60 * 60 * 24));
+                    return acc + Math.max(0, diff);
+                }, 0);
+                prazoMedio = Math.round(totalDias / projetosComPrazo.length);
+            }
+
+            document.getElementById('total-projetos').textContent = total;
+            document.getElementById('projetos-concluidos').textContent = concluidos;
+            document.getElementById('projetos-andamento').textContent = andamento;
+            document.getElementById('etapa-media').textContent = etapaMedia.toFixed(1);
+            document.getElementById('prazo-medio').textContent = prazoMedio + ' dias';
+        }
+
+        // ==================== RENDERIZAÇÃO DA TABELA MELHORADA ====================
+
+        function renderizarTabela() {
+            const projetosFiltrados = filtrarProjetos();
+            document.getElementById('total-filtrados').textContent = projetosFiltrados.length;
+
+            const tbody = document.getElementById('tabela-projetos');
+            tbody.innerHTML = '';
+
+            projetosFiltrados.forEach(projeto => {
+                const etapa = etapasProcesso.find(e => e.id === projeto.etapaAtual);
+                const progresso = calcularProgresso(projeto.etapaAtual);
+                const statusPrazo = calcularStatusPrazo(projeto.prazoFinal);
+                const prazoFormatado = formatarPrazo(projeto.prazoFinal);
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                // Destacar projetos atrasados
+                if (statusPrazo === 'Atrasado') {
+                    row.className += ' bg-red-50';
+                } else if (statusPrazo === 'Urgente') {
+                    row.className += ' bg-yellow-50';
+                }
+
+                row.innerHTML = `
+                    <td class="px-3 py-4">
+                        <div class="text-xs font-medium text-gray-900">${projeto.nome}</div>
+                        <div class="text-xs text-gray-500">#${projeto.id}</div>
+                    </td>
+                    <td class="px-3 py-4">
+                        <div class="text-xs text-gray-900">${projeto.cliente}</div>
+                    </td>
+                    <td class="px-3 py-4">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${obterCorEtapa(projeto.etapaAtual)}">
+                            ${projeto.etapaAtual}. ${etapa ? etapa.nome.substring(0, 20) + '...' : 'Indefinida'}
+                        </span>
+                    </td>
+                    <td class="px-3 py-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: ${progresso}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-500">${progresso}%</span>
+                    </td>
+                    <td class="px-3 py-4">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${obterCorStatus(statusPrazo === 'Atrasado' ? 'Atrasado' : projeto.status)}">
+                            ${statusPrazo === 'Atrasado' ? 'Atrasado' : projeto.status}
+                        </span>
+                    </td>
+                    <td class="px-3 py-4">
+                        <div class="text-xs text-gray-900">${projeto.responsavel}</div>
+                    </td>
+                    <td class="px-3 py-4">
+                        <div class="text-xs ${statusPrazo === 'Atrasado' ? 'text-red-600 font-bold' : statusPrazo === 'Urgente' ? 'text-yellow-600 font-bold' : 'text-gray-900'}">
+                            ${prazoFormatado}
+                        </div>
+                    </td>
+                    <td class="px-3 py-4 text-center">
+                        ${projeto.temLaudo ? '<span class="text-green-600">✅</span>' : '<span class="text-gray-400">❌</span>'}
+                    </td>
+                    <td class="px-3 py-4">
+                        <button onclick="editarProjeto(${projeto.id})" class="text-blue-600 hover:text-blue-800 mr-2" title="Editar">✏️</button>
+                        <button onclick="excluirProjeto(${projeto.id})" class="text-red-600 hover:text-red-800" title="Excluir">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filtrarProjetos() {
+            const filtroEtapa = document.getElementById('filtro-etapa').value;
+            const filtroStatus = document.getElementById('filtro-status').value;
+            const filtroCliente = document.getElementById('filtro-cliente').value;
+            const buscaProjeto = document.getElementById('busca-projeto').value.toLowerCase();
+            
+            return projetos.filter(projeto => {
+                const statusReal = calcularStatusPrazo(projeto.prazoFinal) === 'Atrasado' ? 'Atrasado' : projeto.status;
+                
+                const passaEtapa = filtroEtapa === 'todas' || projeto.etapaAtual.toString() === filtroEtapa;
+                const passaStatus = filtroStatus === 'todos' || statusReal === filtroStatus;
+                const passaCliente = filtroCliente === 'todos' || projeto.cliente === filtroCliente;
+                const passaBusca = !buscaProjeto || 
+                    projeto.nome.toLowerCase().includes(buscaProjeto) ||
+                    projeto.cliente.toLowerCase().includes(buscaProjeto) ||
+                    projeto.responsavel.toLowerCase().includes(buscaProjeto);
+                
+                return passaEtapa && passaStatus && passaCliente && passaBusca;
+            });
+        }
+
+        // ==================== BACKUP E RESTAURAÇÃO ====================
+
+        function backupDados() {
+            const backup = {
+                projetos,
+                clientes,
+                funcionarios,
+                etapasProcesso,
+                proximoId,
+                configAPI: { ...configAPI, token: '' }, // Não incluir token no backup
+                versao: '2.0',
+                timestamp: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(backup, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `newtech_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            mostrarNotificacao('Backup criado com sucesso', 'success');
+        }
+
+        function importarBackup() {
+            const arquivo = document.getElementById('arquivo-backup').files[0];
+            if (!arquivo) {
+                alert('Selecione um arquivo de backup.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    
+                    if (backup.versao && backup.projetos) {
+                        if (confirm('Isso substituirá todos os dados atuais. Continuar?')) {
+                            projetos = backup.projetos || [];
+                            clientes = backup.clientes || [];
+                            funcionarios = backup.funcionarios || [];
+                            etapasProcesso = backup.etapasProcesso || [];
+                            proximoId = backup.proximoId || { projeto: 1, cliente: 1, funcionario: 1, etapa: 1 };
+                            
+                            salvarDados();
+                            atualizarInterface();
+                            mostrarNotificacao('Backup restaurado com sucesso', 'success');
+                        }
+                    } else {
+                        throw new Error('Arquivo de backup inválido');
+                    }
+                } catch (error) {
+                    mostrarNotificacao('Erro ao restaurar backup: ' + error.message, 'error');
+                }
+            };
+            
+            reader.readAsText(arquivo);
+        }
+
+        // ==================== FORMULÁRIOS MELHORADOS ====================
+
+        function mostrarFormProjeto(id = null) {
+            const projeto = id ? projetos.find(p => p.id === id) : null;
+            const titulo = projeto ? 'Editar Projeto' : 'Novo Projeto';
+            
+            document.getElementById('titulo-formulario').textContent = titulo;
+            document.getElementById('conteudo-formulario').innerHTML = `
+                <form onsubmit="salvarProjeto(event, ${id})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Projeto</label>
+                            <input type="text" name="nome" value="${projeto ? projeto.nome : ''}" required 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                            <select name="cliente" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option value="">Selecione um cliente</option>
+                                ${clientes.map(c => 
+                                    `<option value="${c.nome}" ${projeto && projeto.cliente === c.nome ? 'selected' : ''}>${c.nome}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Etapa Atual</label>
+                            <select name="etapa" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                ${etapasProcesso.map(e => 
+                                    `<option value="${e.id}" ${projeto && projeto.etapaAtual === e.id ? 'selected' : ''}>${e.id}. ${e.nome}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select name="status" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option value="Em andamento" ${projeto && projeto.status === 'Em andamento' ? 'selected' : ''}>Em andamento</option>
+                                <option value="Concluído" ${projeto && projeto.status === 'Concluído' ? 'selected' : ''}>Concluído</option>
+                                <option value="Pendente" ${projeto && projeto.status === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Responsáveis</label>
+                            <input type="text" name="responsavel" value="${projeto ? projeto.responsavel : ''}" 
+                                placeholder="Ex: JOÃO, MARIA" required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Prazo Final</label>
+                            <input type="date" name="prazoFinal" value="${projeto ? projeto.prazoFinal : ''}" 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                            <textarea name="observacoes" rows="3" 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                placeholder="Observações sobre o projeto...">${projeto ? projeto.observacoes : ''}</textarea>
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="temLaudo" ${projeto && projeto.temLaudo ? 'checked' : ''} 
+                                    class="mr-2">
+                                <span class="text-sm text-gray-700">Requer Laudo</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-6">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                            Salvar
+                        </button>
+                        <button type="button" onclick="fecharModal('modal-formulario')" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-formulario').classList.add('ativo');
+        }
+
+        // ==================== FUNÇÕES DE SALVAMENTO MELHORADAS ====================
+
+        function salvarProjeto(event, id) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const projeto = {
+                id: id || proximoId.projeto++,
+                nome: formData.get('nome'),
+                cliente: formData.get('cliente'),
+                etapaAtual: parseInt(formData.get('etapa')),
+                status: formData.get('status'),
+                responsavel: formData.get('responsavel'),
+                temLaudo: formData.get('temLaudo') === 'on',
+                prazoFinal: formData.get('prazoFinal') || null,
+                observacoes: formData.get('observacoes') || '',
+                dataCriacao: id ? projetos.find(p => p.id === id)?.dataCriacao : new Date().toISOString().split('T')[0]
+            };
+
+            if (id) {
+                const index = projetos.findIndex(p => p.id === id);
+                projetos[index] = projeto;
+            } else {
+                projetos.push(projeto);
+            }
+
+            salvarDados();
+            atualizarInterface();
+            fecharModal('modal-formulario');
+            
+            // Sincronizar automaticamente se configurado
+            if (configAPI.syncAuto) {
+                setTimeout(() => sincronizarComAPI(), 1000);
+            }
+        }
+
+        // ==================== INTERFACE PRINCIPAL ====================
+
+        function atualizarInterface() {
+            atualizarFiltroEtapas();
+            atualizarFiltroClientes();
+            renderizarTabela();
+            atualizarEstatisticas();
+            renderizarListaProjetos();
+            renderizarListaClientes();
+            renderizarListaFuncionarios();
+            renderizarListaEtapas();
+            atualizarEstatisticasArmazenamento();
+        }
+
+        function atualizarFiltroEtapas() {
+            const select = document.getElementById('filtro-etapa');
+            select.innerHTML = '<option value="todas">Todas as Etapas</option>';
+            
+            etapasProcesso.forEach(etapa => {
+                const option = document.createElement('option');
+                option.value = etapa.id;
+                option.textContent = `${etapa.id}. ${etapa.nome}`;
+                select.appendChild(option);
+            });
+        }
+
+        function atualizarFiltroClientes() {
+            const select = document.getElementById('filtro-cliente');
+            select.innerHTML = '<option value="todos">Todos os Clientes</option>';
+            
+            const clientesUnicos = [...new Set(projetos.map(p => p.cliente))].sort();
+            clientesUnicos.forEach(cliente => {
+                const option = document.createElement('option');
+                option.value = cliente;
+                option.textContent = cliente;
+                select.appendChild(option);
+            });
+        }
+
+        function atualizarEstatisticasArmazenamento() {
+            document.getElementById('stat-projetos').textContent = projetos.length;
+            document.getElementById('stat-clientes').textContent = clientes.length;
+            document.getElementById('stat-funcionarios').textContent = funcionarios.length;
+            document.getElementById('stat-ultima-sync').textContent = configAPI.ultimaSync ? 
+                new Date(configAPI.ultimaSync).toLocaleString('pt-BR') : 'Nunca';
+        }
+
+        // ==================== FUNÇÕES DOS MODAIS ====================
+
+        function mostrarProcesso() {
+            renderizarProcesso();
+            document.getElementById('modal-processo').classList.add('ativo');
+        }
+
+        function renderizarProcesso() {
+            const timeline = document.getElementById('processo-timeline');
+            timeline.innerHTML = '';
+
+            etapasProcesso.forEach(etapa => {
+                const item = document.createElement('div');
+                item.className = 'etapa-item';
+                item.innerHTML = `
+                    <div class="etapa-numero etapa-pendente">${etapa.id}</div>
+                    <div><h3 class="font-semibold text-gray-900 text-sm">${etapa.nome}</h3></div>
+                `;
+                timeline.appendChild(item);
+            });
+        }
+
+        function mostrarGerenciamento() {
+            atualizarInterface();
+            document.getElementById('modal-gerenciamento').classList.add('ativo');
+        }
+
+        function mostrarRelatorios() {
+            gerarRelatorios();
+            document.getElementById('modal-relatorios').classList.add('ativo');
+        }
+
+        function fecharModal(modalId) {
+            document.getElementById(modalId).classList.remove('ativo');
+        }
+
+        function trocarTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ==================== RENDERIZAÇÃO DAS LISTAS ====================
+
+        function renderizarListaProjetos() {
+            const tbody = document.getElementById('lista-projetos');
+            tbody.innerHTML = '';
+
+            projetos.forEach(projeto => {
+                const statusPrazo = calcularStatusPrazo(projeto.prazoFinal);
+                const prazoFormatado = formatarPrazo(projeto.prazoFinal);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-3 py-2">${projeto.nome}</td>
+                    <td class="px-3 py-2">${projeto.cliente}</td>
+                    <td class="px-3 py-2">
+                        <span class="inline-flex px-2 py-1 text-xs rounded-full ${obterCorStatus(statusPrazo === 'Atrasado' ? 'Atrasado' : projeto.status)}">
+                            ${statusPrazo === 'Atrasado' ? 'Atrasado' : projeto.status}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 text-xs ${statusPrazo === 'Atrasado' ? 'text-red-600' : 'text-gray-600'}">
+                        ${prazoFormatado}
+                    </td>
+                    <td class="px-3 py-2">
+                        <button onclick="editarProjeto(${projeto.id})" class="text-blue-600 hover:text-blue-800 mr-2">✏️</button>
+                        <button onclick="excluirProjeto(${projeto.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderizarListaClientes() {
+            const tbody = document.getElementById('lista-clientes');
+            tbody.innerHTML = '';
+
+            clientes.forEach(cliente => {
+                const projetosDoCliente = projetos.filter(p => p.cliente === cliente.nome).length;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-3 py-2">${cliente.nome}</td>
+                    <td class="px-3 py-2">${projetosDoCliente}</td>
+                    <td class="px-3 py-2">
+                        <button onclick="editarCliente(${cliente.id})" class="text-blue-600 hover:text-blue-800 mr-2">✏️</button>
+                        <button onclick="excluirCliente(${cliente.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderizarListaFuncionarios() {
+            const tbody = document.getElementById('lista-funcionarios');
+            tbody.innerHTML = '';
+
+            funcionarios.forEach(funcionario => {
+                const projetosAtivos = projetos.filter(p => 
+                    p.responsavel.includes(funcionario.nome) && p.status === 'Em andamento'
+                ).length;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-3 py-2">${funcionario.nome}</td>
+                    <td class="px-3 py-2">${projetosAtivos}</td>
+                    <td class="px-3 py-2">
+                        <button onclick="editarFuncionario(${funcionario.id})" class="text-blue-600 hover:text-blue-800 mr-2">✏️</button>
+                        <button onclick="excluirFuncionario(${funcionario.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderizarListaEtapas() {
+            const tbody = document.getElementById('lista-etapas');
+            tbody.innerHTML = '';
+
+            etapasProcesso.forEach(etapa => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-3 py-2">${etapa.id}</td>
+                    <td class="px-3 py-2">${etapa.nome}</td>
+                    <td class="px-3 py-2">
+                        <span class="inline-flex px-2 py-1 text-xs rounded-full ${obterCorEtapa(etapa.id)}">
+                            ${etapa.categoria}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2">
+                        <button onclick="editarEtapa(${etapa.id})" class="text-blue-600 hover:text-blue-800 mr-2">✏️</button>
+                        <button onclick="excluirEtapa(${etapa.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ==================== RELATÓRIOS MELHORADOS ====================
+
+        function gerarRelatorios() {
+            // Calcular métricas
+            const totalProjetos = projetos.length;
+            const projetosConcluidos = projetos.filter(p => p.status === 'Concluído').length;
+            const produtividade = totalProjetos > 0 ? Math.round((projetosConcluidos / totalProjetos) * 100) : 0;
+            
+            const etapaMedia = projetos.reduce((acc, p) => acc + p.etapaAtual, 0) / totalProjetos;
+            const tempoMedio = Math.round(etapaMedia * 3); // Estimativa de 3 dias por etapa
+            
+            const projetosAtrasados = projetos.filter(p => calcularStatusPrazo(p.prazoFinal) === 'Atrasado').length;
+            const eficiencia = totalProjetos > 0 ? Math.round(((totalProjetos - projetosAtrasados) / totalProjetos) * 100) : 100;
+
+            document.getElementById('rel-produtividade').textContent = `${produtividade}%`;
+            document.getElementById('rel-tempo-medio').textContent = `${tempoMedio} dias`;
+            document.getElementById('rel-eficiencia').textContent = `${eficiencia}%`;
+            document.getElementById('rel-alertas').textContent = projetosAtrasados;
+
+            // Gerar gráficos
+            gerarGraficoStatus();
+            gerarGraficoEtapas();
+        }
+
+        function gerarGraficoStatus() {
+            const canvas = document.getElementById('grafico-status');
+            const ctx = canvas.getContext('2d');
+            
+            const statusCount = {
+                'Em andamento': projetos.filter(p => p.status === 'Em andamento' && calcularStatusPrazo(p.prazoFinal) !== 'Atrasado').length,
+                'Concluído': projetos.filter(p => p.status === 'Concluído').length,
+                'Atrasado': projetos.filter(p => calcularStatusPrazo(p.prazoFinal) === 'Atrasado').length,
+                'Pendente': projetos.filter(p => p.status === 'Pendente').length
+            };
+
+            // Limpar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Desenhar gráfico de barras
+            const cores = ['#fbbf24', '#10b981', '#ef4444', '#6b7280'];
+            const labels = Object.keys(statusCount);
+            const valores = Object.values(statusCount);
+            const maxValor = Math.max(...valores) || 1;
+            
+            const barWidth = canvas.width / (labels.length * 1.5);
+            const barHeight = canvas.height - 40;
+
+            labels.forEach((label, index) => {
+                const altura = (valores[index] / maxValor) * barHeight;
+                const x = (index + 0.5) * barWidth;
+                const y = canvas.height - altura - 20;
+
+                // Desenhar barra
+                ctx.fillStyle = cores[index];
+                ctx.fillRect(x, y, barWidth * 0.8, altura);
+
+                // Desenhar labels
+                ctx.fillStyle = '#374151';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, x + barWidth * 0.4, canvas.height - 5);
+                ctx.fillText(valores[index], x + barWidth * 0.4, y - 5);
+            });
+        }
+
+        function gerarGraficoEtapas() {
+            const canvas = document.getElementById('grafico-etapas');
+            const ctx = canvas.getContext('2d');
+            
+            // Contar projetos por faixa de etapas
+            const faixas = {
+                'Início (1-6)': projetos.filter(p => p.etapaAtual >= 1 && p.etapaAtual <= 6).length,
+                'Meio (7-12)': projetos.filter(p => p.etapaAtual >= 7 && p.etapaAtual <= 12).length,
+                'Final (13-18)': projetos.filter(p => p.etapaAtual >= 13 && p.etapaAtual <= 18).length
+            };
+
+            // Limpar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const cores = ['#3b82f6', '#8b5cf6', '#10b981'];
+            const labels = Object.keys(faixas);
+            const valores = Object.values(faixas);
+            const maxValor = Math.max(...valores) || 1;
+            
+            const barWidth = canvas.width / (labels.length * 1.5);
+            const barHeight = canvas.height - 40;
+
+            labels.forEach((label, index) => {
+                const altura = (valores[index] / maxValor) * barHeight;
+                const x = (index + 0.5) * barWidth;
+                const y = canvas.height - altura - 20;
+
+                // Desenhar barra
+                ctx.fillStyle = cores[index];
+                ctx.fillRect(x, y, barWidth * 0.8, altura);
+
+                // Desenhar labels
+                ctx.fillStyle = '#374151';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, x + barWidth * 0.4, canvas.height - 5);
+                ctx.fillText(valores[index], x + barWidth * 0.4, y - 5);
+            });
+        }
+
+        // ==================== FUNÇÕES DE EDIÇÃO ====================
+
+        function editarProjeto(id) {
+            mostrarFormProjeto(id);
+        }
+
+        function editarCliente(id) {
+            mostrarFormCliente(id);
+        }
+
+        function editarFuncionario(id) {
+            mostrarFormFuncionario(id);
+        }
+
+        function editarEtapa(id) {
+            mostrarFormEtapa(id);
+        }
+
+        // ==================== FUNÇÕES DE EXCLUSÃO ====================
+
+        function excluirProjeto(id) {
+            if (confirm('Tem certeza que deseja excluir este projeto?')) {
+                projetos = projetos.filter(p => p.id !== id);
+                salvarDados();
+                atualizarInterface();
+                
+                if (configAPI.syncAuto) {
+                    setTimeout(() => sincronizarComAPI(), 1000);
+                }
+            }
+        }
+
+        function excluirCliente(id) {
+            const cliente = clientes.find(c => c.id === id);
+            const temProjetos = projetos.some(p => p.cliente === cliente.nome);
+            
+            if (temProjetos) {
+                alert('Não é possível excluir um cliente que possui projetos.');
+                return;
+            }
+            
+            if (confirm('Tem certeza que deseja excluir este cliente?')) {
+                clientes = clientes.filter(c => c.id !== id);
+                salvarDados();
+                renderizarListaClientes();
+            }
+        }
+
+        function excluirFuncionario(id) {
+            const funcionario = funcionarios.find(f => f.id === id);
+            const temProjetos = projetos.some(p => p.responsavel.includes(funcionario.nome));
+            
+            if (temProjetos) {
+                alert('Não é possível excluir um funcionário que possui projetos ativos.');
+                return;
+            }
+            
+            if (confirm('Tem certeza que deseja excluir este funcionário?')) {
+                funcionarios = funcionarios.filter(f => f.id !== id);
+                salvarDados();
+                renderizarListaFuncionarios();
+            }
+        }
+
+        function excluirEtapa(id) {
+            const temProjetos = projetos.some(p => p.etapaAtual === id);
+            
+            if (temProjetos) {
+                alert('Não é possível excluir uma etapa que possui projetos.');
+                return;
+            }
+            
+            if (confirm('Tem certeza que deseja excluir esta etapa?')) {
+                etapasProcesso = etapasProcesso.filter(e => e.id !== id);
+                salvarDados();
+                renderizarListaEtapas();
+                atualizarFiltroEtapas();
+            }
+        }
+
+        // ==================== FUNÇÕES DOS FORMULÁRIOS ====================
+
+        function mostrarFormCliente(id = null) {
+            const cliente = id ? clientes.find(c => c.id === id) : null;
+            const titulo = cliente ? 'Editar Cliente' : 'Novo Cliente';
+            
+            document.getElementById('titulo-formulario').textContent = titulo;
+            document.getElementById('conteudo-formulario').innerHTML = `
+                <form onsubmit="salvarCliente(event, ${id})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                            <input type="text" name="nome" value="${cliente ? cliente.nome : ''}" required 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Contato</label>
+                            <input type="text" name="contato" value="${cliente ? cliente.contato : ''}" 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-6">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                            Salvar
+                        </button>
+                        <button type="button" onclick="fecharModal('modal-formulario')" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-formulario').classList.add('ativo');
+        }
+
+        function mostrarFormFuncionario(id = null) {
+            const funcionario = id ? funcionarios.find(f => f.id === id) : null;
+            const titulo = funcionario ? 'Editar Funcionário' : 'Novo Funcionário';
+            
+            document.getElementById('titulo-formulario').textContent = titulo;
+            document.getElementById('conteudo-formulario').innerHTML = `
+                <form onsubmit="salvarFuncionario(event, ${id})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                            <input type="text" name="nome" value="${funcionario ? funcionario.nome : ''}" required 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-6">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                            Salvar
+                        </button>
+                        <button type="button" onclick="fecharModal('modal-formulario')" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-formulario').classList.add('ativo');
+        }
+
+        function mostrarFormEtapa(id = null) {
+            const etapa = id ? etapasProcesso.find(e => e.id === id) : null;
+            const titulo = etapa ? 'Editar Etapa' : 'Nova Etapa';
+            
+            document.getElementById('titulo-formulario').textContent = titulo;
+            document.getElementById('conteudo-formulario').innerHTML = `
+                <form onsubmit="salvarEtapa(event, ${id})">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                            <input type="text" name="nome" value="${etapa ? etapa.nome : ''}" required 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                            <select name="categoria" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option value="inicial" ${etapa && etapa.categoria === 'inicial' ? 'selected' : ''}>Inicial</option>
+                                <option value="projeto" ${etapa && etapa.categoria === 'projeto' ? 'selected' : ''}>Projeto</option>
+                                <option value="aprovacao" ${etapa && etapa.categoria === 'aprovacao' ? 'selected' : ''}>Aprovação</option>
+                                <option value="planejamento" ${etapa && etapa.categoria === 'planejamento' ? 'selected' : ''}>Planejamento</option>
+                                <option value="suprimentos" ${etapa && etapa.categoria === 'suprimentos' ? 'selected' : ''}>Suprimentos</option>
+                                <option value="producao" ${etapa && etapa.categoria === 'producao' ? 'selected' : ''}>Produção</option>
+                                <option value="teste" ${etapa && etapa.categoria === 'teste' ? 'selected' : ''}>Teste</option>
+                                <option value="acabamento" ${etapa && etapa.categoria === 'acabamento' ? 'selected' : ''}>Acabamento</option>
+                                <option value="documentacao" ${etapa && etapa.categoria === 'documentacao' ? 'selected' : ''}>Documentação</option>
+                                <option value="expedicao" ${etapa && etapa.categoria === 'expedicao' ? 'selected' : ''}>Expedição</option>
+                                <option value="finalizacao" ${etapa && etapa.categoria === 'finalizacao' ? 'selected' : ''}>Finalização</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-6">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                            Salvar
+                        </button>
+                        <button type="button" onclick="fecharModal('modal-formulario')" 
+                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-formulario').classList.add('ativo');
+        }
+
+        // ==================== SALVAMENTO DOS FORMULÁRIOS ====================
+
+        function salvarCliente(event, id) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const cliente = {
+                id: id || proximoId.cliente++,
+                nome: formData.get('nome'),
+                contato: formData.get('contato')
+            };
+
+            if (id) {
+                const index = clientes.findIndex(c => c.id === id);
+                clientes[index] = cliente;
+            } else {
+                clientes.push(cliente);
+            }
+
+            salvarDados();
+            renderizarListaClientes();
+            atualizarFiltroClientes();
+            fecharModal('modal-formulario');
+        }
+
+        function salvarFuncionario(event, id) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const funcionario = {
+                id: id || proximoId.funcionario++,
+                nome: formData.get('nome').toUpperCase()
+            };
+
+            if (id) {
+                const index = funcionarios.findIndex(f => f.id === id);
+                funcionarios[index] = funcionario;
+            } else {
+                funcionarios.push(funcionario);
+            }
+
+            salvarDados();
+            renderizarListaFuncionarios();
+            fecharModal('modal-formulario');
+        }
+
+        function salvarEtapa(event, id) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            
+            const etapa = {
+                id: id || proximoId.etapa++,
+                nome: formData.get('nome'),
+                categoria: formData.get('categoria')
+            };
+
+            if (id) {
+                const index = etapasProcesso.findIndex(e => e.id === id);
+                etapasProcesso[index] = etapa;
+            } else {
+                etapasProcesso.push(etapa);
+                etapasProcesso.sort((a, b) => a.id - b.id);
+            }
+
+            salvarDados();
+            renderizarListaEtapas();
+            atualizarFiltroEtapas();
+            renderizarTabela();
+            fecharModal('modal-formulario');
+        }
+
+        // ==================== EXPORTAÇÃO ====================
+
+        function exportToExcel() {
+            const projetosFiltrados = filtrarProjetos();
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "ID,Nome,Cliente,Etapa,Status,Responsavel,Prazo,Tem_Laudo,Observacoes\n";
+            
+            projetosFiltrados.forEach(projeto => {
+                const etapa = etapasProcesso.find(e => e.id === projeto.etapaAtual);
+                const statusReal = calcularStatusPrazo(projeto.prazoFinal) === 'Atrasado' ? 'Atrasado' : projeto.status;
+                const prazoFormatado = projeto.prazoFinal ? new Date(projeto.prazoFinal).toLocaleDateString('pt-BR') : 'Não definido';
+                
+                csvContent += `${projeto.id},"${projeto.nome}","${projeto.cliente}","${projeto.etapaAtual}. ${etapa ? etapa.nome : 'Indefinida'}","${statusReal}","${projeto.responsavel}","${prazoFormatado}",${projeto.temLaudo ? 'Sim' : 'Não'},"${projeto.observacoes || ''}"\n`;
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `projetos_newtech_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ==================== EVENT LISTENERS ====================
+
+        document.addEventListener('click', function(e) {
+            const modals = ['modal-processo', 'modal-gerenciamento', 'modal-formulario', 'modal-relatorios'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (e.target === modal) {
+                    fecharModal(modalId);
+                }
+            });
+        });
+
+        // ==================== INICIALIZAÇÃO ====================
+
+        function inicializar() {
+            // Carregar dados salvos
+            carregarDados();
+            
+            // Carregar configurações da API
+            carregarConfigAPI();
+            
+            // Atualizar interface
+            atualizarInterface();
+            
+            // Configurar sync automático se ativado
+            if (configAPI.syncAuto) {
+                document.getElementById('sync-auto').checked = true;
+                configurarSyncAuto();
+            }
+            
+            // Tentar sincronização inicial
+            if (configAPI.url && configAPI.token) {
+                setTimeout(() => sincronizarComAPI(), 2000);
+            }
+            
+            // Auto-save a cada 30 segundos
+            setInterval(() => {
+                salvarDados();
+            }, 30000);
+
+            mostrarNotificacao('Dashboard New Tech carregado com sucesso!', 'success');
+        }
+
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', inicializar);
+
+        // Salvar dados antes de sair da página
+        window.addEventListener('beforeunload', function() {
+            salvarDados();
+        });
+    </script>
 </body>
 </html>
