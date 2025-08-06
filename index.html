@@ -21,6 +21,11 @@
 
   <div class="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow">
     <h2 class="text-xl font-semibold mb-2">Tarefas</h2>
+    <form id="formTarefa" class="mb-4 hidden">
+      <input type="text" id="titulo" placeholder="Título da tarefa" class="border p-2 w-full mb-2 rounded" required>
+      <textarea id="descricao" placeholder="Descrição da tarefa" class="border p-2 w-full mb-2 rounded" required></textarea>
+      <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">Adicionar Tarefa</button>
+    </form>
     <div id="tarefas"></div>
   </div>
 
@@ -44,7 +49,7 @@
       apiKey: "AIzaSyC_Ef8e-gmf1V0lxynXT1EAy6q8hy22iAk",
       authDomain: "andamento-tarefas-newtech.firebaseapp.com",
       projectId: "andamento-tarefas-newtech",
-      storageBucket: "andamento-tarefas-newtech.firebasestorage.app",
+      storageBucket: "andamento-tarefas-newtech.appspot.com",
       messagingSenderId: "932727566307",
       appId: "1:932727566307:web:d7a8b5943d1adba7207ad6",
       measurementId: "G-08FCQRYEDZ"
@@ -78,10 +83,16 @@
       signOut(auth);
     }
 
+    const formTarefa = document.getElementById("formTarefa");
+    const tarefasDiv = document.getElementById("tarefas");
+
     onAuthStateChanged(auth, user => {
-      const tarefasDiv = document.getElementById("tarefas");
       tarefasDiv.innerHTML = "";
+      formTarefa.classList.add("hidden");
+
       if (user) {
+        formTarefa.classList.remove("hidden");
+
         const ref = collection(db, "tarefas");
         onSnapshot(ref, snapshot => {
           tarefasDiv.innerHTML = "<ul class='list-disc pl-5'>";
@@ -92,11 +103,32 @@
           tarefasDiv.innerHTML += "</ul>";
         });
 
-        // Exemplo: Adiciona tarefa de teste ao logar
-        addDoc(ref, {
-          titulo: "Nova Tarefa",
-          descricao: "Essa tarefa foi criada ao logar."
-        });
+        formTarefa.onsubmit = async (e) => {
+          e.preventDefault();
+          const titulo = document.getElementById("titulo").value;
+          const descricao = document.getElementById("descricao").value;
+
+          // Envia para Firebase
+          try {
+            await addDoc(ref, { titulo, descricao });
+          } catch (e) {
+            alert("Erro ao adicionar tarefa: " + e.message);
+          }
+
+          // Também envia para API local
+          try {
+            await fetch("http://localhost:8080/api/tarefas", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ titulo, descricao })
+            });
+          } catch (e) {
+            console.warn("Erro ao sincronizar com API local:", e.message);
+          }
+
+          formTarefa.reset();
+        };
+
       } else {
         tarefasDiv.innerHTML = "<em>Faça login para ver as tarefas.</em>";
       }
